@@ -33,7 +33,6 @@ client = Groq(api_key=groq_key)
 FIREBASE_ENABLED = False
 db = None
 try:
-    # Essayez de charger les credentials Firebase (le fichier doit être présent)
     if not firebase_admin._apps:
         if os.path.exists('serviceAccountKey.json'):
             cred = credentials.Certificate('serviceAccountKey.json')
@@ -65,7 +64,6 @@ def get_today_str():
 def get_user_data(user_id: str):
     today = get_today_str()
     
-    # Récupérer l'objectif calorique (par défaut 2000 ou celui de l'onboarding)
     objectif = 2000
     if FIREBASE_ENABLED:
         profile_ref = db.collection('users').document(user_id).get()
@@ -74,7 +72,6 @@ def get_user_data(user_id: str):
     else:
         objectif = local_profiles.get(user_id, {}).get('calories_objectif', 2000)
 
-    # Récupérer les données du jour
     if FIREBASE_ENABLED:
         doc_ref = db.collection('users').document(user_id).collection('days').document(today)
         doc = doc_ref.get()
@@ -99,7 +96,6 @@ def save_user_data(user_id: str, suivi: dict):
         local_sessions[user_id][today] = suivi
 
 def get_historique(user_id: str):
-    # Historique de chat en mémoire temporaire pour ne pas surcharger la base de données de logs de discussion
     if not hasattr(get_historique, "chat_history"):
         get_historique.chat_history = {}
     
@@ -107,12 +103,28 @@ def get_historique(user_id: str):
         get_historique.chat_history[user_id] = [
             {
                 "role": "system",
-                "content": """Tu es NutriBot, un agent nutritionnel intelligent.
-Tu peux :
-- Calculer les calories d'un repas avec l'outil calculer_calories
-- Suivre l'apport calorique journalier avec l'outil suivre_apport
+                "content": """Tu es NutriBot, un assistant nutritionnel intelligent et chaleureux.
 
-Si l'utilisateur indique ce qu'il a mangé, utilise tes outils pour le calculer et l'enregistrer."""
+Tu as deux modes de conversation :
+
+1. 🗣️ CONVERSATION GÉNÉRALE :
+   - Réponds naturellement aux salutations et questions basiques (ex: "Salut !", "Comment ça va ?", "C'est quoi ton rôle ?", "Tu fais quoi ?")
+   - Sois sympa, chaleureux et encourage l'utilisateur
+   - Tu peux faire de l'humour léger lié à la nutrition
+   - Réponds toujours en français de manière naturelle et décontractée
+
+2. 🥗 SUIVI NUTRITIONNEL :
+   - Si l'utilisateur mentionne un aliment ou un repas → utilise l'outil calculer_calories
+   - Si l'utilisateur veut enregistrer ce qu'il a mangé → utilise l'outil suivre_apport
+   - Donne des conseils nutritionnels bienveillants et personnalisés
+   - Réponds aux questions sur les calories, les aliments, les régimes, la nutrition, etc.
+
+RÈGLES IMPORTANTES :
+- Ne réponds JAMAIS par du JSON brut ou des données techniques à l'utilisateur
+- Reformule toujours les résultats des outils de façon naturelle et encourageante
+- Si tu ne sais pas quelque chose, dis-le honnêtement avec bienveillance
+- Garde un ton positif et motivant en toutes circonstances
+- En cas de simple "salut" ou "bonjour", réponds chaleureusement et demande comment tu peux aider"""
             }
         ]
     return get_historique.chat_history[user_id]
@@ -237,7 +249,7 @@ class OnboardingRequest(BaseModel):
     sexe: str
     poids: float
     taille: float
-    objectif_poids: str # perte, maintien, prise
+    objectif_poids: str  # perte, maintien, prise
 
 # --- Endpoints ---
 
@@ -289,7 +301,6 @@ async def chat(req: ChatRequest):
 @app.post("/api/onboarding")
 async def onboarding(req: OnboardingRequest):
     try:
-        # L'agent calcule les calories idéales basées sur tout le profil
         prompt = f"""
         Calcule les calories journalières recommandées pour cette personne :
         - Âge : {req.age} ans
@@ -311,13 +322,11 @@ async def onboarding(req: OnboardingRequest):
         try:
             calories_objectif = int(calories_str)
         except:
-            calories_objectif = 2000 # Fallback si l'IA répond mal
+            calories_objectif = 2000
 
-        # Calcul automatique de l'IMC
         taille_m = req.taille / 100
         imc = round(req.poids / (taille_m * taille_m), 1)
 
-        # Sauvegarde du profil
         profile_data = {
             "age": req.age,
             "sexe": req.sexe,
@@ -376,11 +385,42 @@ async def analyze_imc(req: ImcRequest):
 
 @app.post("/api/log_meal")
 async def log_meal(req: LogMealRequest):
-    aliments_texte = ", ".join([f"{item.grammes}g de {item.nom}" for item in req.items])
-    prompt = f"L'utilisateur vient de manger : {aliments_texte}. Calcule les calories exactes avec ton outil 'calculer_calories' puis ajoute ce repas entier au suivi avec l'outil 'suivre_apport'. Fais un petit résumé de validation à la fin."
+    ingredients = [{"nom": item.nom, "grammes": item.grammes} for item in req.items]
+    resultat_cal = calculer_calories(ingredients)
     
-    chat_req = ChatRequest(message=prompt, session_id=req.session_id)
-    return await chat(chat_req)
+    total_str = resultat_cal.get("total_estimé", "0 kcal")
+    total_int = int(total_str.replace(" kcal", "").strip())
+    
+    nom_repas = ", ".join([f"{item.grammes}g {item.nom}" for item in req.items])
+    
+    suivi_resultat = suivre_apport(req.session_id, nom_repas, total_int)
+    
+    details_texte = "\n".join([f"- {k} : {v}" for k, v in resultat_cal.get("détails", {}).items()])
+    prompt_resume = f"""Tu es NutriBot. L'utilisateur vient d'enregistrer ce repas :
+{details_texte}
+Total : {total_str}
+Total journalier : {suivi_resultat['total_journalier']} kcal / objectif {suivi_resultat['objectif']} kcal.
+
+Fais un résumé bienveillant en 2-3 phrases courtes. Mentionne le total du repas, le total journalier et ce qu'il reste. Pas de markdown complexe."""
+
+    try:
+        ai_response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {"role": "system", "content": "Tu es NutriBot, un assistant nutritionnel bienveillant. Réponds en français, de façon courte et encourageante."},
+                {"role": "user", "content": prompt_resume}
+            ]
+        )
+        message_final = ai_response.choices[0].message.content
+    except Exception:
+        restant = suivi_resultat['objectif'] - suivi_resultat['total_journalier']
+        message_final = f"✅ Repas enregistré ! Total : {total_str}. Aujourd'hui vous avez consommé {suivi_resultat['total_journalier']} kcal sur {suivi_resultat['objectif']} kcal. Il vous reste {max(0, restant)} kcal."
+
+    user_data = get_user_data(req.session_id)
+    return {
+        "response": message_final,
+        "suivi_journalier": {**user_data["suivi_journalier"], "objectif": user_data["objectif"]}
+    }
 
 @app.get("/api/suivi/{session_id}")
 async def get_suivi(session_id: str):

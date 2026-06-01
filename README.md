@@ -59,20 +59,6 @@ NutriGo is not a simple chatbot — it's an **AI agent** with tools:
 
 The agent decides on its own which tool to use based on the conversation context.
 
-## 📊 Example Usage
-
-```
-Toi: calcule les calories de poulet, riz et tomate
- Utilisation de l'outil : calculer_calories
- Résultat : {"total_estimé": "313 kcal", ...}
- NutriBot: Votre repas contient environ 313 kcal...
-
-Toi: j'ai mangé une salade césar, 350 calories
- Utilisation de l'outil : suivre_apport
- Résultat : {"total_journalier": 350, "restant": 1650, ...}
- NutriBot: Repas enregistré ! Il vous reste 1650 kcal pour aujourd'hui.
-```
-
 ## 🔒 Environment Variables
 
 | Variable | Description |

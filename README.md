@@ -15,7 +15,7 @@ NutriGo is an AI-powered nutritional assistant agent that helps users track thei
 |-------|-----------|
 | Backend | Python, FastAPI |
 | AI / LLM | Groq API (LLaMA 3.3 70B) |
-| Frontend | React |
+| Frontend | Next |
 
 ##  Getting Started
 

@@ -2,12 +2,12 @@
 
 NutriGo is an AI-powered nutritional assistant agent that helps users track their daily caloric intake and get personalized nutrition advice.
 
-## ✨ Features
+##  Features
 
-- 🤖 **AI Nutritional Agent** — Powered by Groq (LLaMA 3.3 70B), specialized exclusively in nutrition, recipes, and food
-- 🔥 **Calorie Calculator** — Estimates calories based on a list of ingredients
-- 📊 **Daily Intake Tracker** — Tracks meals and monitors daily caloric goals
-- 🍽️ **Recipe Advice** — Suggests recipes and nutritional tips
+- **AI Nutritional Agent** — Powered by Groq (LLaMA 3.3 70B), specialized exclusively in nutrition, recipes, and food
+- **Calorie Calculator** — Estimates calories based on a list of ingredients
+- **Daily Intake Tracker** — Tracks meals and monitors daily caloric goals
+- **Recipe Advice** — Suggests recipes and nutritional tips
 
 ## 🛠️ Tech Stack
 
@@ -17,7 +17,7 @@ NutriGo is an AI-powered nutritional assistant agent that helps users track thei
 | AI / LLM | Groq API (LLaMA 3.3 70B) |
 | Frontend | React |
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Prerequisites
 
@@ -63,14 +63,14 @@ The agent decides on its own which tool to use based on the conversation context
 
 ```
 Toi: calcule les calories de poulet, riz et tomate
-⚙️  Utilisation de l'outil : calculer_calories
-📊 Résultat : {"total_estimé": "313 kcal", ...}
-🥗 NutriBot: Votre repas contient environ 313 kcal...
+ Utilisation de l'outil : calculer_calories
+ Résultat : {"total_estimé": "313 kcal", ...}
+ NutriBot: Votre repas contient environ 313 kcal...
 
 Toi: j'ai mangé une salade césar, 350 calories
-⚙️  Utilisation de l'outil : suivre_apport
-📊 Résultat : {"total_journalier": 350, "restant": 1650, ...}
-🥗 NutriBot: Repas enregistré ! Il vous reste 1650 kcal pour aujourd'hui.
+ Utilisation de l'outil : suivre_apport
+ Résultat : {"total_journalier": 350, "restant": 1650, ...}
+ NutriBot: Repas enregistré ! Il vous reste 1650 kcal pour aujourd'hui.
 ```
 
 ## 🔒 Environment Variables

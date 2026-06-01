@@ -65,6 +65,6 @@ The agent decides on its own which tool to use based on the conversation context
 |----------|-------------|
 | `GROQ_API_KEY` | Your Groq API key |
 
-## 📄 License
+##  License
 
 MIT License
